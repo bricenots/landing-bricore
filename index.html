@@ -134,6 +134,16 @@
             color: #e74c3c;
         }
         
+        .version-info {
+            text-align: center;
+            margin-top: 20px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-size: 12px;
+            color: #666;
+        }
+        
         @media (max-width: 768px) {
             .container {
                 margin: 10px;
@@ -206,11 +216,23 @@
             <p>🔒 Tus datos están seguros y protegidos</p>
             <p>📱 Recibirás una confirmación por WhatsApp</p>
         </div>
+        
+        <div class="version-info">
+            <p>🔄 Versión GitHub - Despliegue automático activado</p>
+            <p>📅 Última actualización: <span id="lastUpdate"></span></p>
+        </div>
     </div>
 
     <script>
-        // REEMPLAZA ESTA URL CON TU URL DE API GATEWAY
-        const API_URL = 'https://TU-API-ID.execute-api.us-east-1.amazonaws.com/prod/encuesta';
+        // Configuración de la API
+        const CONFIG = {
+            // Cambiar a true cuando tengas la API lista
+            USE_REAL_API: false,
+            API_URL: 'https://PENDIENTE-CONFIGURAR.execute-api.us-east-1.amazonaws.com/prod/encuesta'
+        };
+        
+        // Mostrar fecha de última actualización
+        document.getElementById('lastUpdate').textContent = new Date().toLocaleString('es-ES');
         
         document.getElementById('surveyForm').addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -235,48 +257,73 @@
                 userAgent: navigator.userAgent
             };
             
-            try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(formData)
-                });
-                
-                const result = await response.json();
-                
-                if (response.ok && result.success) {
+            if (CONFIG.USE_REAL_API) {
+                // Usar API real
+                try {
+                    const response = await fetch(CONFIG.API_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(formData)
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (response.ok && result.success) {
+                        messageDiv.innerHTML = `
+                            <div class="success">
+                                <h3>¡Gracias ${formData.nombre}! 🎉</h3>
+                                <p>Tu encuesta ha sido guardada exitosamente en la base de datos.</p>
+                                <p>📱 Pronto recibirás una confirmación en WhatsApp al ${formData.telefono}</p>
+                                <p>📧 También te enviaremos información a ${formData.email}</p>
+                                <p><small>ID: ${result.customerId}</small></p>
+                            </div>
+                        `;
+                        
+                        // Limpiar formulario
+                        document.getElementById('surveyForm').reset();
+                    } else {
+                        throw new Error(result.message || 'Error desconocido');
+                    }
+                    
+                } catch (error) {
+                    console.error('Error:', error);
+                    messageDiv.innerHTML = `
+                        <div class="error">
+                            <h3>❌ Error al enviar</h3>
+                            <p>No se pudo procesar tu encuesta. Por favor intenta de nuevo.</p>
+                            <p><small>${error.message}</small></p>
+                        </div>
+                    `;
+                }
+            } else {
+                // Modo simulación
+                setTimeout(() => {
                     messageDiv.innerHTML = `
                         <div class="success">
                             <h3>¡Gracias ${formData.nombre}! 🎉</h3>
-                            <p>Tu encuesta ha sido guardada exitosamente.</p>
+                            <p>Tu encuesta ha sido procesada exitosamente.</p>
                             <p>📱 Pronto recibirás una confirmación en WhatsApp al ${formData.telefono}</p>
                             <p>📧 También te enviaremos información a ${formData.email}</p>
-                            <p><small>ID: ${result.customerId}</small></p>
+                            <p><small>⚠️ Modo simulación - Los datos no se guardan aún</small></p>
                         </div>
                     `;
                     
                     // Limpiar formulario
                     document.getElementById('surveyForm').reset();
-                } else {
-                    throw new Error(result.message || 'Error desconocido');
-                }
-                
-            } catch (error) {
-                console.error('Error:', error);
-                messageDiv.innerHTML = `
-                    <div class="error">
-                        <h3>❌ Error al enviar</h3>
-                        <p>No se pudo procesar tu encuesta. Por favor intenta de nuevo.</p>
-                        <p><small>${error.message}</small></p>
-                    </div>
-                `;
-            } finally {
-                // Rehabilitar botón
+                    
+                    // Log para desarrollo
+                    console.log('Datos de la encuesta (simulación):', formData);
+                    
+                }, 2000);
+            }
+            
+            // Rehabilitar botón
+            setTimeout(() => {
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Enviar Encuesta';
-            }
+            }, 2000);
         });
         
         // Validación en tiempo real
@@ -289,3 +336,4 @@
     </script>
 </body>
 </html>
+
